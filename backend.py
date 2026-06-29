@@ -38,6 +38,9 @@ class CancelAppointmentResponse(BaseModel):
 class ListAppointmentsRequest(BaseModel):
     date: dt.date
 
+class ListAppointmentsResponse(BaseModel):
+    appointment_count: int 
+
 
 # Endpoints:
     # scedule-appointment
@@ -88,7 +91,7 @@ def cancel_appointment(request : CancelAppointmentRequest, db: Session = Depends
     appointments = result.scalars().all()
 
     if not appointments:
-        return HTTPException(status_code=404, detail="No matching appointment found in our database")
+        raise HTTPException(status_code=404, detail="No matching appointment found in our database")
     
     for appointment in appointments:
         appointment.cancelled = True
@@ -102,7 +105,7 @@ def cancel_appointment(request : CancelAppointmentRequest, db: Session = Depends
     return cancel_appointment_response
 
 
-@app.get("/list_appointments")
+@app.post("/list_appointments")
 def list_appointment(request : ListAppointmentsRequest, db: Session = Depends(get_db)):
     
     start_dt = dt.datetime.combine(request.date, dt.time.min)
@@ -121,12 +124,12 @@ def list_appointment(request : ListAppointmentsRequest, db: Session = Depends(ge
     for appointment in result.scalars():
 
         appointment_obj = AppointmentResponse(
-            appointment.id,
-            appointment.patient_name,
-            appointment.reason,
-            appointment.start_time,
-            appointment.cancelled,
-            appointment.created_at
+            id = appointment.id,
+            patient_name = appointment.patient_name,
+            reason = appointment.reason,
+            start_time = appointment.start_time,
+            cancelled = appointment.cancelled,
+            created_at = appointment.created_at
         )
 
         booked_appointments.append(appointment_obj)
